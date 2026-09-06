@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>c9nsored's private games</title>
+<style>
+  :root{
+    --bg: #060a0c;
+    --panel: #0b1215;
+    --panel-line: #162326;
+    --text: #9db3ba;
+    --text-dim: #4d6066;
+    --accent: #00d9ff;
+    --accent-dim: #0a4c58;
+    --warn: #ff4747;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Consolas, "Courier New", Menlo, monospace;
+    font-size: 15px;
+    overflow-x: hidden;
+  }
+
+  /* cheap CRT scanline texture, no images */
+  body::before{
+    content:"";
+    position: fixed;
+    inset:0;
+    pointer-events:none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 5;
+  }
+
+  .frame{
+    max-width: 860px;
+    margin: 36px auto;
+    padding: 0 18px 60px;
+  }
+
+  .window{
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    box-shadow: 0 0 0 1px #000, 0 0 40px rgba(0,217,255,0.05);
+  }
+
+  .titlebar{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--panel-line);
+    background: linear-gradient(to bottom, #0d171a, #0a1215);
+  }
+
+  .titlebar .dots{ display:flex; gap:7px; }
+  .dots span{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--panel-line);
+    display:inline-block;
+  }
+  .dots span:nth-child(1){ background:#3a2323; }
+  .dots span:nth-child(2){ background:#3a3323; }
+  .dots span:nth-child(3){ background:#233a2a; }
+
+  .titlebar .path{
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .content{ padding: 30px 26px 10px; }
+
+  .prompt-line{
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .prompt-line span{ color: var(--accent); }
+
+  h1{
+    margin: 4px 0 6px;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #d8f4fa;
+    position: relative;
+  }
+  h1 .cursor{
+    display:inline-block;
+    width: 10px;
+    height: 22px;
+    background: var(--accent);
+    margin-left: 4px;
+    vertical-align: -3px;
+    animation: blink 1.05s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0; } }
+
+  .subtitle{
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 26px;
+    max-width: 60ch;
+    line-height: 1.5;
+  }
+
+  .status-row{
+    display:flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--panel-line);
+    border-bottom: 1px solid var(--panel-line);
+    padding: 10px 0;
+  }
+  .status-row b{ color: var(--text); font-weight: 600; }
+  .dot-live{
+    width:6px; height:6px; border-radius: 50%;
+    background: var(--accent);
+    display:inline-block;
+    margin-right:6px;
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+
+  .slot{
+    border: 1px dashed var(--panel-line);
+    background: #081014;
+    aspect-ratio: 1 / 1;
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:center;
+    gap: 8px;
+    position: relative;
+    transition: border-color 0.15s ease;
+  }
+  .slot:hover{ border-color: var(--accent-dim); }
+
+  .slot .icon{
+    width: 30px; height: 30px;
+    border: 1px solid var(--text-dim);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--text-dim);
+    font-size: 15px;
+  }
+  .slot .label{
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+  }
+  .slot .id{
+    position:absolute;
+    top:6px; left:8px;
+    font-size: 10px;
+    color: #2a383c;
+  }
+
+  footer{
+    color: var(--text-dim);
+    font-size: 11px;
+    text-align:center;
+    margin-top: 26px;
+    letter-spacing: 0.02em;
+  }
+  footer .accent{ color: var(--accent-dim); }
+
+  @media (prefers-reduced-motion: reduce){
+    .cursor{ animation: none; opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="window">
+    <div class="titlebar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="path">/root/vault/c9nsored</div>
+    </div>
+
+    <div class="content">
+      <div class="prompt-line"><span>&gt;</span> access granted // local session only</div>
+      <h1>c9nsored's private games<span class="cursor"></span></h1>
+      <p class="subtitle">This shelf is empty for now. Drop a game in and it'll show up here — nothing leaves this machine.</p>
+
+      <div class="status-row">
+        <div><span class="dot-live"></span><b>0</b> games loaded</div>
+        <div>storage: <b>local only</b></div>
+        <div>visibility: <b>private</b></div>
+      </div>
+
+      <div class="grid" id="gameGrid"></div>
+
+      <footer>no games yet — this is <span class="accent">your</span> shelf to fill</footer>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Cheap, dependency-free: render N empty slots without any external assets.
+  const grid = document.getElementById('gameGrid');
+  const SLOT_COUNT = 8;
+  for (let i = 0; i < SLOT_COUNT; i++){
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.innerHTML =
+      '<span class="id">' + String(i + 1).padStart(2, '0') + '</span>' +
+      '<div class="icon">+</div>' +
+      '<div class="label">empty slot</div>';
+    grid.appendChild(slot);
+  }
+</script>
+
+</body>
+</html>
